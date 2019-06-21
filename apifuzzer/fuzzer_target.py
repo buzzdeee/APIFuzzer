@@ -67,12 +67,13 @@ class FuzzerTarget(ServerTarget):
             self.logger.warn('Request KWARGS:{}, url: {}'.format(kwargs, _req_url))
             request_url = '/'.join(_req_url)
             request_url = self.expand_path_variables(request_url, kwargs.get('path_variables'))
-            request_url = self.expand_path_variables(request_url, kwargs.get('params'))
+            request_url = self.expand_query_parameters(request_url, kwargs.get('params'))
             if kwargs.get('path_variables'):
                 kwargs.pop('path_variables')
             kwargs.pop('url')
             self.logger.warn('>>> Formatted URL: {} <<<'.format(request_url))
-            _return = requests.request(url=request_url, **kwargs)
+            headers = {'Authorization': 'api-key {}'.format(os.getenv("API_FUZZER_API_KEY", ""))}
+            _return = requests.request(url=request_url, headers=headers, **kwargs)
             status_code = _return.status_code
             if status_code:
                 if status_code not in self.accepted_status_codes:
@@ -117,3 +118,15 @@ class FuzzerTarget(ServerTarget):
         url = url.replace("{", "").replace("}", "")
         return url
 
+    def expand_query_parameters(self, url, query_parameters):
+        if not isinstance(query_parameters, dict):
+            self.logger.error('query_parameters: {}'.format(query_parameters))
+            return url
+        url = url + '?'
+        for param_key, param_value in query_parameters.items():
+            try:
+                pkey = param_key.split('|')[-1]
+		url=url + pkey + '=' + param_value.decode('unicode-escape').encode('utf8') + '&'
+            except Exception as e:
+                self.logger.warn('Failed to replace string in url: {} param: {}, exception: {}'.format(url, path_value, e))
+        return url
