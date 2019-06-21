@@ -73,7 +73,14 @@ class FuzzerTarget(ServerTarget):
             kwargs.pop('url')
             self.logger.warn('>>> Formatted URL: {} <<<'.format(request_url))
             headers = {'Authorization': 'api-key {}'.format(os.getenv("API_FUZZER_API_KEY", ""))}
-            _return = requests.request(url=request_url, headers=headers, **kwargs)
+
+            if kwargs["headers"]:
+                combinedHeaders = {key: value for (key, value) in (headers.items() + kwargs['headers'].items())}
+                del kwargs['headers']
+                _return = requests.request(url=request_url, headers=combinedHeaders, **kwargs)
+            else:
+                _return = requests.request(url=request_url, headers=headers, **kwargs)
+
             status_code = _return.status_code
             if status_code:
                 if status_code not in self.accepted_status_codes:
