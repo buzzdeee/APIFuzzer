@@ -1,1 +1,2 @@
 kittyfuzzer==0.7.1
+requests
