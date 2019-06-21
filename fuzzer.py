@@ -7,6 +7,8 @@ import json
 import logging
 import signal
 import tempfile
+import requests
+import os
 
 if sys.version_info[:2] == (2, 7):
     from kitty.interfaces import WebInterface
@@ -65,7 +67,7 @@ if __name__ == '__main__':
     parser.add_argument('-s', '--src_file',
                         type=str,
                         required=True,
-                        help='API definition file path',
+                        help='API definition file path or URL',
                         dest='src_file')
     parser.add_argument('-r', '--report_dir',
                         type=str,
@@ -100,11 +102,34 @@ if __name__ == '__main__':
                         choices=[level.lower() for level in logging._levelNames if isinstance(level, str)])
     args = parser.parse_args()
     api_definition_json = dict()
+    if args.src_file.startswith('https://') or args.src_file.startswith('http://'):
+      api_file=args.report_dir + '/swagger.json'
+      try:
+        if "PL_API_KEY" in os.environ:
+          headers = {'Authorization': 'api-key ' + os.environ["PL_API_KEY"]}
+          r = requests.get(args.src_file, headers=headers, verify=False)
+        else:
+          r = requests.get(args.src_file, verify=False)
+      except:
+        print('problem downloading swagger json from ' + str(args.src_file))
+        os.remove(api_file)
+        exit()
+      try:
+        with open(api_file, 'w') as f:
+          print(r.content)
+          f.write(r.content)
+        print('storing swagger.json in: ' + str(api_file))
+      except:
+        print('problem writing to ' + str(api_file))
+        os.remove(api_file)
+        exit()
+      args.src_file=api_file
     try:
         with open(args.src_file, 'r') as f:
             api_definition_json = json.loads(f.read())
     except Exception as e:
         print('Failed to parse input file: {}'.format(e))
+        os.remove(api_file)
         exit()
     prog = Fuzzer(api_resources=api_definition_json,
                   report_dir=args.report_dir,
@@ -116,3 +141,4 @@ if __name__ == '__main__':
     prog.prepare()
     signal.signal(signal.SIGINT, signal_handler)
     prog.run()
+    os.remove(api_file)
