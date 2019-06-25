@@ -73,16 +73,16 @@ class FuzzerTarget(ServerTarget):
             self.logger.warn('>>> Formatted URL: {} <<<'.format(request_url))
 
 	    if "API_FUZZER_API_KEY" in os.environ:
-		headers = {'Authorization': 'api-key {}'.format(os.getenv("API_FUZZER_API_KEY", ""))}
+                headers = {'Authorization': 'api-key {}'.format(os.getenv("API_FUZZER_API_KEY", ""))}
                 if 'headers' in kwargs:
                     combinedHeaders = {key: value for (key, value) in (headers.items() + kwargs['headers'].items())}
                     del kwargs['headers']
                     headers = combinedHeaders
                 self.logger.warn('Request Headers:{}, KWARGS:{}, url: {}'.format(headers, kwargs, _req_url))
-		_return = requests.request(url=request_url, headers=headers, verify=False, **kwargs)
+                _return = requests.request(url=request_url, headers=headers, verify=False, **kwargs)
 	    else:
                 self.logger.warn('Request KWARGS:{}, url: {}'.format(kwargs, _req_url))
-		_return = requests.request(url=request_url, verify=False, **kwargs)
+                _return = requests.request(url=request_url, verify=False, **kwargs)
 
             status_code = _return.status_code
             if status_code:
