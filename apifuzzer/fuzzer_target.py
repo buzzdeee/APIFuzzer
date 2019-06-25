@@ -64,7 +64,6 @@ class FuzzerTarget(ServerTarget):
             for url_part in self.base_url, kwargs['url']:
                 self.logger.info('URL part: {}'.format(url_part))
                 _req_url.append(url_part.strip('/'))
-            self.logger.warn('Request KWARGS:{}, url: {}'.format(kwargs, _req_url))
             request_url = '/'.join(_req_url)
             request_url = self.expand_path_variables(request_url, kwargs.get('path_variables'))
             request_url = self.expand_query_parameters(request_url, kwargs.get('params'))
@@ -72,11 +71,19 @@ class FuzzerTarget(ServerTarget):
                 kwargs.pop('path_variables')
             kwargs.pop('url')
             self.logger.warn('>>> Formatted URL: {} <<<'.format(request_url))
+
 	    if "API_FUZZER_API_KEY" in os.environ:
-		headers = {'Authorization': 'api-key {}'.format(os.getenv("API_FUZZER_API_KEY", ""))}
-		_return = requests.request(url=request_url, headers=headers, verify=False, **kwargs)
+                headers = {'Authorization': 'api-key {}'.format(os.getenv("API_FUZZER_API_KEY", ""))}
+                if 'headers' in kwargs:
+                    combinedHeaders = {key: value for (key, value) in (headers.items() + kwargs['headers'].items())}
+                    del kwargs['headers']
+                    headers = combinedHeaders
+                self.logger.warn('Request Headers:{}, KWARGS:{}, url: {}'.format(headers, kwargs, _req_url))
+                _return = requests.request(url=request_url, headers=headers, verify=False, **kwargs)
 	    else:
-		_return = requests.request(url=request_url, verify=False, **kwargs)
+                self.logger.warn('Request KWARGS:{}, url: {}'.format(kwargs, _req_url))
+                _return = requests.request(url=request_url, verify=False, **kwargs)
+
             status_code = _return.status_code
             if status_code:
                 if status_code not in self.accepted_status_codes:
