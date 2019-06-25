@@ -1,4 +1,5 @@
 import logging
+import sys
 from logging import Formatter
 from logging.handlers import SysLogHandler
 from custom_fuzzers import RandomBitsField
@@ -33,7 +34,8 @@ def get_sample_data_by_type(param_type):
 
 
 def set_logger(level='warning'):
-    syslog = SysLogHandler(address='/dev/log', facility=SysLogHandler.LOG_LOCAL2)
+    syslog = logging.StreamHandler(sys.stdout)
+    #syslog = SysLogHandler(address='/dev/log', facility=SysLogHandler.LOG_LOCAL2)
     syslog.setFormatter(Formatter('%(process)d [%(levelname)s] %(name)s: %(message)s'))
     logger = logging.getLogger()
     logger.setLevel(level=level.upper())
