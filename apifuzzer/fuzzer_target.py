@@ -88,6 +88,7 @@ class FuzzerTarget(ServerTarget):
                 _return = requests.request(url=request_url, verify=False, **kwargs)
 
             status_code = _return.status_code
+            self.logger.warn('request returned with status code: {}'.format(status_code))
             if status_code:
                 if status_code not in self.accepted_status_codes:
                     self.report.add('parsed status_code', status_code)
